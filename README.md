@@ -1,46 +1,60 @@
-# Projeto: Banco de Dados - Farmácia Segura (farmacia_seg)
+# 🏥 Banco de Dados - Farmácia Segura (farmacia_seg)
 
-Este projeto contém um script SQL inicial para a criação e gerenciamento do banco de dados de uma farmácia (`farmacia_seg`). O foco principal do script, além de estruturar os dados, é demonstrar a aplicação de **segurança de dados** e **controle de acesso** baseado em perfis de usuários no MySQL.
+Este projeto contém um script SQL projetado para criar e gerenciar o banco de dados de uma farmácia (`farmacia_seg`). Além de estruturar as tabelas e dados iniciais, o script tem um forte foco em **DCL (Data Control Language)**, demonstrando práticas de **segurança de dados** e **controle de acesso** baseado em perfis no MySQL.
 
 ## 📋 Estrutura do Banco de Dados
 
-O banco de dados é composto por duas tabelas principais:
+O banco de dados possui duas tabelas principais, separadas por nível de confidencialidade:
 
-1. **`produto`**: Armazena o catálogo da farmácia.
+1. **`produto`** (Catálogo)
    * **Campos:** `id`, `nome`, `preco`, `estoque`.
-   * **Nível de Acesso:** Informação pública para todos os funcionários da farmácia.
-   
-2. **`funcionario`**: Armazena as informações do quadro de funcionários.
+   * **Confidencialidade:** Baixa. Informação pública para todos os funcionários.
+
+2. **`funcionario`** (Recursos Humanos)
    * **Campos:** `id`, `nome`, `cargo`, `salario`.
-   * **Nível de Acesso:** Restrito. Contém **dados sensíveis** (salário), não devendo ser acessado por qualquer usuário.
+   * **Confidencialidade:** Alta. Contém dados sensíveis (como o `salario`), exigindo restrição de acesso rigorosa.
 
-## 🔐 Controle de Acesso e Permissões (Grants)
+## 🔐 Perfis de Acesso e Permissões (Grants)
 
-O script cria dois perfis de usuários com diferentes níveis de privilégios para garantir a segurança da informação:
+O script cria dois usuários com diferentes níveis de privilégios para garantir a segurança da informação:
 
-### 1. Perfil: Atendente
-* **Usuário:** `atendente` (ex: Luiz)
-* **Permissões:** Acesso restrito apenas para leitura (`SELECT`).
-* **Escopo:** Apenas a tabela `produto`.
-* **Objetivo:** Garantir que o atendente possa consultar preços e estoque, mas sem acesso à tabela de funcionários ou permissão para alterar dados.
+### 👤 Perfil: Atendente (Ex: Luiz)
+* **Usuário:** `'atendente'@'localhost'`
+* **Acesso:** Restrito.
+* **Permissões:** Apenas leitura (`SELECT`).
+* **Escopo:** Apenas a tabela `farmacia_seg.produto`. O atendente não consegue visualizar dados de funcionários.
 
-### 2. Perfil: Gerente
-* **Usuário:** `gerente` (ex: Davi Cerimonial)
-* **Permissões:** Leitura (`SELECT`), Inserção (`INSERT`) e Atualização (`UPDATE`).
-* **Escopo:** Todo o banco de dados `farmacia_seg` (todas as tabelas).
-* **Objetivo:** Permitir que a gerência atualize estoques, cadastre novos produtos e visualize ou altere informações da equipe.
+### 👨‍💼 Perfil: Gerente (Ex: Davi Cerimonial)
+* **Usuário:** `'gerente'@'localhost'`
+* **Acesso:** Amplo.
+* **Permissões Iniciais:** Leitura (`SELECT`), Inserção (`INSERT`) e Atualização (`UPDATE`).
+* **Escopo:** Todo o banco de dados `farmacia_seg.*` (todas as tabelas).
+
+## ⚙️ Administração e Segurança de Usuários (DCL)
+
+O script também demonstra operações essenciais para o dia a dia de um Administrador de Banco de Dados (DBA) ou responsável pela segurança:
+
+* **Revogação de Permissões (`REVOKE`):** 
+  Retira privilégios específicos previamente concedidos. *Exemplo no script: Remove a permissão de `UPDATE` do gerente.*
+  
+* **Alteração de Senha (`ALTER USER`):** 
+  Redefine a senha de um usuário de forma segura. *Exemplo no script: Troca a senha do gerente para `nova@2026`.*
+  
+* **Bloqueio Temporário (`ACCOUNT LOCK / UNLOCK`):** 
+  Suspende temporariamente o acesso de um usuário sem excluí-lo do banco de dados (útil para férias, licenças ou investigações). *Exemplo no script: Bloqueia e desbloqueia o atendente.*
+  
+* **Exclusão de Usuário (`DROP USER`):** 
+  Remove definitivamente o usuário e todos os seus acessos do servidor MySQL. *Exemplo no script: Apaga o usuário do gerente.*
 
 ## 🚀 Como Executar
 
-1. É necessário ter um servidor MySQL (ou MariaDB) instalado.
-2. Acesse o seu SGBD (ex: MySQL Workbench, DBeaver, ou via terminal) com um usuário administrador (**ROOT**).
-   * *Atenção: A criação de usuários e atribuição de permissões exige privilégios administrativos.*
-3. Copie o conteúdo do script SQL fornecido.
-4. Execute o script na íntegra para criar a base, inserir os dados de teste e configurar os usuários.
-5. Para testar a segurança, faça logout do root e tente conectar com os usuários criados (`atendente` e `gerente`) usando suas respectivas senhas.
+1. É necessário ter um servidor MySQL ou MariaDB instalado e rodando.
+2. Acesse o seu SGBD (MySQL Workbench, DBeaver, DBeaver, terminal, etc.) utilizando o usuário **`root`** (ou outro com privilégios de administrador).
+3. Execute o script passo a passo, observando as mensagens de sucesso de cada instrução.
+4. Para testar a segurança, tente logar com o usuário `atendente` usando a senha `atend@2026` e tente fazer um `SELECT` na tabela de funcionários (o acesso deve ser negado).
 
-## 🛠️ Comandos de Verificação Úteis
-O script inclui comandos práticos de auditoria e verificação no final:
-* `select user, host from mysql.user;` - Lista os usuários cadastrados no servidor.
-* `select current_user();` - Mostra qual usuário está logado no momento.
-* `show grants for 'usuario'@'localhost';` - Exibe as permissões ativas de um usuário específico.
+## 🛠️ Comandos de Auditoria Integrados
+
+* `SELECT user, host FROM mysql.user;` - Lista todos os usuários cadastrados no SGBD.
+* `SELECT current_user();` - Mostra com qual usuário e host você está logado no momento.
+* `SHOW GRANTS FOR 'usuario'@'localhost';` - Exibe os privilégios exatos concedidos a uma conta específica.
